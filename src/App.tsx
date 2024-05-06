@@ -8,6 +8,7 @@ import './App.css';
  */
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean, // a new variable for the user to make the graph available to them
 }
 
 /**
@@ -22,6 +23,7 @@ class App extends Component<{}, IState> {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      showGraph: false, // Initially the graph will be hidden untill the user demands it by clicking Start Streaming 
     };
   }
 
@@ -29,18 +31,31 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    if(this.state.showGraph){ // We use this to check if the graph has already been turned on or not. Only in the case it's turned on we will show the graph
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    let gap =0;
+    const interval = setInterval(()=>{ // used to update the graph in a fixed interval of 100 units so that client does not have to click on start every time
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        // Update the state by creating a new array of data that consists of
+        // Previous data in the state and the new data from server
+        this.setState({ 
+          data: serverResponds,
+          showGraph: true,
+         });
+      });
+      gap++;
+      if(gap>1000){
+        clearInterval(interval);
+      }
+    },100) 
+    
   }
 
   /**
